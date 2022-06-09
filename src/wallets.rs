@@ -8,6 +8,7 @@ use crate::wallet::Wallet;
 
 pub const WALLET_FILE: &str = "wallet.dat";
 
+/// 钱包管理
 pub struct Wallets {
     wallets: HashMap<String, Wallet>,
 }

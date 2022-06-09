@@ -9,8 +9,8 @@ const SUBSIDY: i32 = 10;         //挖矿奖励
 /// 交易输入
 #[derive(Clone, Default, Serialize, Deserialize)]
 pub struct TxInput {
-    txid: Vec<u8>,          // 前一个交易的id
-    vout: usize,            // 输出的索引
+    txid: Vec<u8>,          // 交易的id
+    outid: usize,           // 该交易输入对应交易输出的索引
     signature: Vec<u8>,     // 交易签名
     pub_key: Vec<u8>,       // 公钥
 }
@@ -20,7 +20,7 @@ impl TxInput {
     pub fn new(txid: &[u8], vout: usize) -> Self {
         TxInput {
             txid: txid.to_vec(),
-            vout,
+            outid: vout,
             signature: vec![],
             pub_key: vec![],
         }
@@ -32,8 +32,8 @@ impl TxInput {
     }
 
     /// 获取交易输出索引
-    pub fn get_vout(&self) -> usize {
-        self.vout
+    pub fn get_outid(&self) -> usize {
+        self.outid
     }
 
     /// 获取交易公钥
@@ -73,9 +73,13 @@ impl TxOutput {
         let payload = crate::base58_decode(address);
         self.pub_key_hash = payload[1..payload.len()-wallet::ADDRESS_CHECKSUM_LEN].to_vec();
     }
-    
-    fn is_locked_with_key(&self, key_hash: &[u8]) -> bool {
+
+    pub fn is_locked_with_key(&self, key_hash: &[u8]) -> bool {
         self.pub_key_hash.eq(key_hash)
+    }
+
+    pub fn get_value(&self) -> i32 {
+        self.value
     }
 }
 
@@ -89,8 +93,7 @@ pub struct Transaction {
 
 impl Transaction {
 
-    /// 新建coinbase交易, 
-    /// coinbase交易的输入是
+    /// 新建coinbase交易
     pub fn new_coinbase_tx(to: &str) -> Self {
         let tx_out = TxOutput::new(SUBSIDY, to);
         let mut tx_in = TxInput::default();
@@ -103,13 +106,46 @@ impl Transaction {
         };
         tx.id = tx.hash();
 
-        tx
+        return tx;
     }
 
+    pub fn new_utxo_tx(from: &str, to: &str, amount: i32,) -> Self {
+
+    }
+
+    /// 序列化该交易为一个字节数组
     pub fn serialize(&self) -> Vec<u8> {
         bincode::serialize(self).unwrap().to_vec()
     }
 
+    /// 反序列化, byte数组->交易
+    pub fn deserialize(bytes: &[u8]) -> Self {
+        bincode::deserialize(bytes).unwrap()
+    }
+
+    /// 对交易每个输入进行签名
+    pub fn sign(&mut self, blockchain: &Blockchain, pkcs8: &[u8]) {
+        let mut tx_copy = self.trimmed_copy();
+
+        for (idx, vin) in self.vin.iter_mut().enumerate() {
+            // 查找输入引用的交易
+            let prev_tx_option = blockchain.find_transaction(vin.get_txid());
+            if prev_tx_option.is_none() {
+                panic!("ERROR: Previous transaction is not correct")
+            }
+            let prev_tx = prev_tx_option.unwrap();
+            tx_copy.vin[idx].signature = vec![];
+            tx_copy.vin[idx].pub_key = prev_tx.vout[vin.outid].pub_key_hash.clone();
+            tx_copy.id = tx_copy.hash();
+            tx_copy.vin[idx].pub_key = vec![];
+
+            // 使用私钥对数据签名
+            let signature = crate::ecdsa_p256_sha256_sign_digest(pkcs8, tx_copy.get_id());
+            vin.signature = signature;
+        }
+    }
+
+    /// 计算交易hash
     fn hash(&mut self) -> Vec<u8> {
         let tx_copy = Transaction {
             id: vec![],
@@ -119,20 +155,65 @@ impl Transaction {
         crate::sha256_digest(tx_copy.serialize().as_slice())
     }
 
+    /// 获取交易id
     pub fn get_id(&self) -> &[u8] {
         self.id.as_slice()
     }
 
-    pub fn verify(&self, blockchain: &Blockchain) -> bool {
-
-
-        todo!()
+    /// 获取交易id副本
+    pub fn get_id_bytes(&self) -> Vec<u8> {
+        self.id.clone()
     }
 
-    /// 是否为coinbase交易. 
+    /// 获取交易输入
+    pub fn get_vin(&self) -> &[TxInput] {
+        self.vin.as_slice()
+    }
+
+    /// 获取交易输出
+    pub fn get_vout(&self) -> &[TxOutput] {
+        self.vout.as_slice()
+    }
+
+    /// 验证交易的签名是否合法
+    pub fn verify(&self, blockchain: &Blockchain) -> bool {
+        if self.is_coinbase() {
+            return true;
+        }
+        let tx_copy = self.trimmed_copy();
+        for (idx, vin) in self.vin.iter().enumerate() {
+            let prev_tx = blockchain.find_transaction(vin.get_txid()).unwrap();
+
+            tx_copy.vin[idx].signature = vec![];
+            tx_copy.vin[idx].pub_key = prev_tx.vout[vin.outid].pub_key_hash.clone();
+            tx_copy.id = tx_copy.hash();
+            tx_copy.vin[idx].pub_key = vec![];
+
+            let verify = crate::ecdsa_p256_sha256_sign_verify(
+                vin.pub_key.as_slice(),
+                vin.signature.as_slice(),
+                tx_copy.get_id(),
+            );
+            if !verify {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /// 是否为coinbase交易.
     /// coinbase交易的输入为
     pub fn is_coinbase(&self) -> bool {
         return self.vin.len() == 1 && self.vin[0].pub_key.len() == 0;
     }
 
+    /// 修剪交易后的副本
+    fn trimmed_copy(&self) -> Transaction {
+        Transaction {
+            id: self.id.clone(),
+            vin: self.vin.iter().cloned().map(|input|TxInput::new(input.get_txid(), input.get_outid())).collect(),
+            vout: self.vout.iter().cloned().collect(),
+        }
+    }
 }

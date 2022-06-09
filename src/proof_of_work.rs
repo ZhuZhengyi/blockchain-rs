@@ -74,5 +74,4 @@ mod tests {
         let b = BigInt::from_signed_bytes_be(vec.as_slice());
         println!("{}", b)
     }
-
 }

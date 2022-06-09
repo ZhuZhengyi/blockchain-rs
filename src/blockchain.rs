@@ -77,4 +77,47 @@ impl Blockchain {
         todo!()
     }
 
+    pub fn iterator(&self) -> BlockchainIterator {
+        BlockchainIterator::new(self.get_tip_hash(), self.db.clone())
+    }
+
+    /// 从区块链中查找交易
+    pub fn find_transaction(&self, txid: &[u8]) -> Option<Transaction> {
+        let mut iterator = self.iterator();
+        loop {
+            let option = iterator.next();
+            if option.is_none() {
+                break;
+            }
+            let block = option.unwrap();
+            for transaction in block.get_transactions() {
+                if txid.eq(transaction.get_id()) {
+                    return Some(transaction.clone());
+                }
+            }
+        }
+        None
+    }
+
 }
+
+/// blockchain 迭代器
+pub struct BlockchainIterator {
+    db: Db,
+    current_hash: String,
+}
+
+impl BlockchainIterator {
+
+    /// 新建blockchain iterator
+    pub fn new(tip_hash: String, db: Db) -> Self {
+        BlockchainIterator { db, current_hash: tip_hash, }
+    }
+    
+    pub fn next(&self) -> Option<Block> {
+
+        todo!()
+    } 
+}
+
+

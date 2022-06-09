@@ -51,6 +51,10 @@ impl Block {
         crate::sha256_digest(tx_hashes.as_slice())
     }
 
+    /// 获取区块中的交易
+    pub fn get_transactions(&self) -> &[Transaction] {
+        self.transactions.as_slice()
+    }
 
     /// 反序列化, 字节数组 -> Block
     pub fn deserialize(bytes: &[u8]) -> Self {

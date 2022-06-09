@@ -7,7 +7,7 @@ use ring::signature::{EcdsaKeyPair, ECDSA_P256_SHA256_FIXED_SIGNING, KeyPair};
 use serde::{Serialize, Deserialize};
 
 const VERSION: u8 = 0x00;
-pub const ADDRESS_CHECKSUM_LEN: usize = 4;
+pub const ADDRESS_CHECKSUM_LEN: usize = 4;  //地址checksum长度
 
 /// 钱包
 #[derive(Clone, Serialize, Deserialize)]
@@ -35,8 +35,10 @@ impl Wallet {
     }
 
     /// 获取钱包地址
+    /// address = base58( version+ hash(pub_key) + checksum)
     pub fn get_address(&self) -> String {
-
+        let pub_key_hash = hash_pub_key(&self.public_key);
+        convert_address(pub_key_hash.as_slice())
     }
 }
 
@@ -71,7 +73,7 @@ pub fn validate_address(address: &str) -> bool {
 
 /// 通过公钥hash key计算address
 pub fn convert_address(pub_hash_key: &[u8]) -> String {
-    let mut payload: Vec[u8] = vec![];
+    let mut payload: Vec<u8> = vec![];
     payload.push(VERSION);
     payload.extend(pub_hash_key);
     let checksum = checksum(payload.as_slice());
