@@ -65,6 +65,9 @@ impl Wallets {
     /// 从文件加载wallets
     pub fn load_from_file(&mut self) {
         let path = current_dir().unwrap().join(WALLET_FILE);
+        if !path.exists() {
+            return;
+        }
         let mut file = File::open(path).unwrap();
         let metadata = file.metadata().expect("unable to read metadata");
         let mut buf = vec![0; metadata.len() as usize];

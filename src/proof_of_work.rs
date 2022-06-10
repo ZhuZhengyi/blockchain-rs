@@ -31,6 +31,7 @@ impl ProofOfWork {
         datas.extend(self.block.get_pre_block_hash().as_bytes());
         datas.extend(self.block.hash_transactions());
         datas.extend(self.block.get_timestamp().to_be_bytes());
+        datas.extend(TARGET_BITS.to_be_bytes());
         datas.extend(nonce.to_be_bytes());
 
         datas

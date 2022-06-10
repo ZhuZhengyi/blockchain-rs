@@ -85,6 +85,10 @@ impl TxOutput {
         self.pub_key_hash.eq(key_hash)
     }
 
+    pub fn get_pub_key_hash(&self) -> &[u8] {
+        self.pub_key_hash.as_slice()
+    }
+
     pub fn get_value(&self) -> i32 {
         self.value
     }

@@ -48,7 +48,7 @@ impl UTXOSet {
                         let _ = utxo_tree.remove(txin.get_txid());
                     } else { //否则更新交易对应的output
                         let out_bytes = bincode::serialize(&updated_outs).expect("serialize updated outs failed");
-                        utxo_tree.insert(txin.get_txid(), out_bytes);
+                        let _ = utxo_tree.insert(txin.get_txid(), out_bytes);
                     }
                 }
             }
@@ -61,7 +61,6 @@ impl UTXOSet {
                 bincode::serialize(&new_outputs).expect("unable to serialize TXOutput");
             let _ = utxo_tree.insert(tx.get_id(), outs_bytes).unwrap();
         }
-
     }
 
     /// 统计UTXO集中tx数量
@@ -96,13 +95,13 @@ impl UTXOSet {
     /// 重建utxo
     pub fn reindex(&self) {
         let utxo_tree = self.get_utxo_tree();
-        utxo_tree.clear();
+        let _ = utxo_tree.clear();
 
         let utxo_map = self.blockchain.find_utxo();
         for (txid_hex, outs) in &utxo_map {
             let txid = HEXLOWER.decode(txid_hex.as_bytes()).unwrap();
             let value = bincode::serialize(outs).unwrap();
-            utxo_tree.insert(txid.as_slice(), value);
+            let _ = utxo_tree.insert(txid.as_slice(), value);
         }
     }
 

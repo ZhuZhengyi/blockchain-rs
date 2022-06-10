@@ -243,7 +243,7 @@ fn serve(blockchain: Blockchain, stream: TcpStream) -> Result<(), Box<dyn Error>
         }
     }
 
-    stream.shutdown(std::net::Shutdown::Both);
+    let _ = stream.shutdown(std::net::Shutdown::Both);
     Ok(())
 }
 

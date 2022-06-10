@@ -20,7 +20,6 @@ impl Node {
     pub fn parse_socket_addr(&self) -> SocketAddr {
         self.addr.parse().unwrap()
     }
-
 }
 
 /// 节点管理

@@ -8,16 +8,16 @@ use sled::IVec;
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Block {
     timestamp: u64,         // 生成区块时间戳
-    nonce: i64,             // 计数
+    nonce: i64,             // 随机数, pow挖矿时用于产生微扰
     height: usize,          // 区块高度(该区块相对于创世区块的个数)
-    hash: String,     // 区块hash
+    hash: String,           // 区块hash, hash由: 上一个区块hash+hash(本区块所有tx)+timestamp+nonce
     pre_block_hash: String, // 上一个区块hash
     transactions: Vec<Transaction>, //交易
 }
 
 impl Block {
     /// 新建一个区块
-    pub fn new_block(pre_block_hash: String, transactions: &[Transaction], height: usize) -> Self {
+    pub fn new(pre_block_hash: String, transactions: &[Transaction], height: usize) -> Self {
         let mut block = Block {
             timestamp: crate::current_timestamp(),
             nonce: 0,
@@ -36,9 +36,9 @@ impl Block {
     }
 
     /// 生成创世区块
-    pub fn generate_genesis_bloc(transaction: &Transaction) -> Self {
+    pub fn generate_genesis_block(transaction: &Transaction) -> Self {
         let transactions = vec![transaction.clone()];
-        return Block::new_block(String::from("None"), &transactions, 0);
+        return Block::new(String::from("None"), &transactions, 0);
     }
 
     /// 计算区块所有交易hash

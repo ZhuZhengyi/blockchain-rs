@@ -40,7 +40,7 @@ impl Blockchain {
         let data = blocks_tree.get(TIP_BLOCK_HASH_KEY).unwrap();
         if data.is_none() {
             let coinbase_tx = Transaction::new_coinbase_tx(genesis_address);
-            let block = Block::generate_genesis_bloc(&coinbase_tx);
+            let block = Block::generate_genesis_block(&coinbase_tx);
             Self::update_blocks_tree(&blocks_tree, &block);
             tip_hash = String::from(block.get_hash());
         } else {
@@ -144,7 +144,7 @@ impl Blockchain {
 
         // 
         let best_height = self.get_best_height();
-        let block = Block::new_block(self.get_tip_hash(), transactions, best_height+1);
+        let block = Block::new(self.get_tip_hash(), transactions, best_height+1);
         let block_tree = self.get_block_tree();
         Self::update_blocks_tree(&block_tree, &block);
         self.set_tip_hash(block.get_hash());
