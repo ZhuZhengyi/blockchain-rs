@@ -2,7 +2,12 @@
 //
 //
 
-use std::{env::current_dir, fs::{OpenOptions, File}, io::{BufWriter, Write}, collections::HashMap};
+use std::{
+    env::current_dir, 
+    fs::{OpenOptions, File}, 
+    io::{BufWriter, Write, Read}, 
+    collections::HashMap
+};
 
 use crate::wallet::Wallet;
 
@@ -60,7 +65,7 @@ impl Wallets {
     /// 从文件加载wallets
     pub fn load_from_file(&mut self) {
         let path = current_dir().unwrap().join(WALLET_FILE);
-        let file = File::open(path).unwrap();
+        let mut file = File::open(path).unwrap();
         let metadata = file.metadata().expect("unable to read metadata");
         let mut buf = vec![0; metadata.len() as usize];
         let _ = file.read(&mut buf).expect("buffer overflow");

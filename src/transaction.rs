@@ -1,6 +1,12 @@
 // transaction.rs
 
-use crate::{base58_decode, wallet, Blockchain};
+use crate::{
+    wallet::{self, hash_pub_key},
+    Blockchain, 
+    Wallets,
+    utxo_set::UTXOSet
+};
+use data_encoding::HEXLOWER;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -43,7 +49,8 @@ impl TxInput {
 
     ///
     pub fn uses_key(&self, pub_key_hash: &[u8]) -> bool {
-        todo!()
+        let locking_hash = wallet::hash_pub_key(self.pub_key.as_slice());
+        return locking_hash.eq(pub_key_hash);
     }
 }
 
@@ -109,8 +116,49 @@ impl Transaction {
         return tx;
     }
 
-    pub fn new_utxo_tx(from: &str, to: &str, amount: i32,) -> Self {
+    /// 新建一笔utxo交易
+    pub fn new_utxo_transaction(from: &str, to: &str, amount: i32, utxo_set: &UTXOSet) -> Self {
+        let wallets = Wallets::new();
+        let wallet = wallets.get_wallet(from).unwrap();
+        let pub_key_hash = hash_pub_key(wallet.get_public_key());
 
+        let (accumulated, valid_outputs) = utxo_set.find_spendable_outputs(pub_key_hash.as_slice(), amount);
+        if accumulated < amount {
+            panic!("Error! not enough funds");
+        }
+
+        let mut inputs = vec![];
+        for (txid_hex, outs) in valid_outputs {
+            let txid = HEXLOWER.decode(txid_hex.as_bytes()).unwrap();
+            for out in outs {
+                let input = TxInput {
+                    txid: txid.clone(),
+                    outid: out,
+                    pub_key: wallet.get_public_key().to_vec(),
+                    signature: vec![],
+                };
+                inputs.push(input);
+            }
+        }
+
+
+        let mut outputs = vec![TxOutput::new(amount, to)];
+        // 如果 UTXO 总数超过所需，则产生找零
+        if accumulated > amount {
+            outputs.push(TxOutput::new(accumulated - amount, from)) // to: 币收入
+        }
+        // 4.生成交易
+        let mut tx = Transaction {
+            id: vec![],
+            vin: inputs,
+            vout: outputs,
+        };
+        // 生成交易ID
+        tx.id = tx.hash();
+        // 5.交易中的 TXInput 签名
+        tx.sign(utxo_set.get_blockchain(), wallet.get_pkcs8());
+
+        return tx;
     }
 
     /// 序列化该交易为一个字节数组
@@ -140,8 +188,7 @@ impl Transaction {
             tx_copy.vin[idx].pub_key = vec![];
 
             // 使用私钥对数据签名
-            let signature = crate::ecdsa_p256_sha256_sign_digest(pkcs8, tx_copy.get_id());
-            vin.signature = signature;
+            vin.signature = crate::ecdsa_p256_sha256_sign_digest(pkcs8, tx_copy.get_id());
         }
     }
 
@@ -180,7 +227,7 @@ impl Transaction {
         if self.is_coinbase() {
             return true;
         }
-        let tx_copy = self.trimmed_copy();
+        let mut tx_copy = self.trimmed_copy();
         for (idx, vin) in self.vin.iter().enumerate() {
             let prev_tx = blockchain.find_transaction(vin.get_txid()).unwrap();
 

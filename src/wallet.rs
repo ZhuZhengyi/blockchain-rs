@@ -1,7 +1,6 @@
 // wallet.rs
 //
 
-use core::slice::SlicePattern;
 
 use ring::signature::{EcdsaKeyPair, ECDSA_P256_SHA256_FIXED_SIGNING, KeyPair};
 use serde::{Serialize, Deserialize};

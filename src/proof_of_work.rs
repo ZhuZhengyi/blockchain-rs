@@ -1,7 +1,6 @@
 // proof_of_work.rs
 //
 
-use core::slice::SlicePattern;
 use std::borrow::Borrow;
 use data_encoding::HEXLOWER;
 

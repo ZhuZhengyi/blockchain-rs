@@ -1,10 +1,13 @@
 // utxo_set.rs
 //
 
-use std::collections::HashMap;
+use crate::{
+    Blockchain, 
+    block::Block, 
+    transaction::TxOutput
+};
 use data_encoding::HEXLOWER;
-use crate::{Blockchain, block::Block, transaction::TxOutput};
-
+use std::collections::HashMap;
 
 const UTXO_TREE: &str = "chainstate";
 
@@ -88,6 +91,19 @@ impl UTXOSet {
         }
 
         utxos
+    }
+
+    /// 重建utxo
+    pub fn reindex(&self) {
+        let utxo_tree = self.get_utxo_tree();
+        utxo_tree.clear();
+
+        let utxo_map = self.blockchain.find_utxo();
+        for (txid_hex, outs) in &utxo_map {
+            let txid = HEXLOWER.decode(txid_hex.as_bytes()).unwrap();
+            let value = bincode::serialize(outs).unwrap();
+            utxo_tree.insert(txid.as_slice(), value);
+        }
     }
 
     /// 查找所有可消费的output

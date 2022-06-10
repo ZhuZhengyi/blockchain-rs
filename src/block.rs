@@ -66,6 +66,13 @@ impl Block {
         bincode::serialize(self).unwrap().to_vec()
     }
 
+    /// 获取block高度
+    /// block的高度为当前 block到初始区块间区块的个数
+    pub fn get_height(&self) -> usize {
+        self.height
+    }
+
+    /// 获取前一个区块的hash
     pub fn get_pre_block_hash(&self) -> String {
         self.pre_block_hash.clone()
     }
