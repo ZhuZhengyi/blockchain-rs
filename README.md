@@ -68,3 +68,7 @@ Your new address: 1FztXwduMcABm6x2yxRWgozqT8g1dgeiFS
 [node3]$ ../bin/blockchain print-chain
 
 ```
+
+## 参考
+
+1. https://zhuanlan.zhihu.com/p/256444986
