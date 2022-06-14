@@ -2,11 +2,21 @@
 //
 
 use data_encoding::HEXLOWER;
-use sled::{Db, Tree, transaction::TransactionResult};
-
-use std::{sync::{Arc, RwLock}, env::current_dir, collections::HashMap};
-
-use crate::{Transaction, block::Block, transaction::TxOutput};
+use sled::{
+    Db,
+    Tree,
+    transaction::TransactionResult
+};
+use std::{
+    collections::HashMap,
+    env::current_dir,
+    sync::{Arc, RwLock},
+};
+use crate::{
+    Transaction,
+    block::Block,
+    transaction::TxOutput
+};
 
 const BLOCKS_TREE: &str = "blocks";
 const TIP_BLOCK_HASH_KEY: &str = "tip_block_hash";
@@ -15,12 +25,13 @@ const TIP_BLOCK_HASH_KEY: &str = "tip_block_hash";
 #[derive(Clone)]
 pub struct Blockchain {
     tip_hash: Arc<RwLock<String>>,      //最后一个block的hash
-    db: Db,
+    db: Db,                 // 保存blockchain的db
 }
 
 impl Blockchain {
-    /// 新建Blockchain实例
-    pub fn new_blockchain() -> Self {
+
+    /// 打开Blockchain实例
+    pub fn open_blockchain() -> Self {
         let db = sled::open(current_dir().unwrap().join("data")).unwrap();
         let blocks_tree = db.open_tree(BLOCKS_TREE).unwrap();
         let tip_bytes = blocks_tree.get(TIP_BLOCK_HASH_KEY).unwrap().expect("No existing blockchain found");
@@ -50,6 +61,7 @@ impl Blockchain {
         Blockchain { tip_hash: Arc::new(RwLock::new(tip_hash)), db }
     }
 
+    /// 更新最后一个block
     fn update_blocks_tree(blocks_tree: &Tree, block: &Block) {
         let block_hash = block.get_hash();
         let _: TransactionResult<(), ()> = blocks_tree.transaction(|tx_db| {
@@ -63,15 +75,18 @@ impl Blockchain {
         &self.db
     }
 
+    ///
     pub fn get_tip_hash(&self) -> String {
         self.tip_hash.read().unwrap().clone()
     }
 
+    ///
     pub fn set_tip_hash(&self, new_tip_hash: &str) {
         let mut tip_hash = self.tip_hash.write().unwrap();
         *tip_hash = String::from(new_tip_hash);
     }
 
+    ///
     fn get_block_tree(&self) -> Tree {
         self.db.open_tree(BLOCKS_TREE).unwrap()
     }
@@ -142,7 +157,7 @@ impl Blockchain {
             }
         }
 
-        // 
+        //
         let best_height = self.get_best_height();
         let block = Block::new(self.get_tip_hash(), transactions, best_height+1);
         let block_tree = self.get_block_tree();
@@ -223,7 +238,6 @@ impl Blockchain {
 
         utxo
     }
-
 }
 
 /// blockchain 迭代器

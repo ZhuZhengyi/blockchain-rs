@@ -36,6 +36,7 @@ impl Block {
     }
 
     /// 生成创世区块
+    /// 创世区块的前一个区块为none, 高度为0
     pub fn generate_genesis_block(transaction: &Transaction) -> Self {
         let transactions = vec![transaction.clone()];
         return Block::new(String::from("None"), &transactions, 0);
@@ -77,14 +78,17 @@ impl Block {
         self.pre_block_hash.clone()
     }
 
+    /// 获取当前区块hash
     pub fn get_hash(&self) -> &str {
         self.hash.as_str()
     }
 
+    /// 获取当前区块hash bytes
     pub fn get_hash_bytes(&self) -> Vec<u8> {
         self.hash.as_bytes().to_vec()
     }
 
+    /// 获取当前区块时间戳
     pub fn get_timestamp(&self) -> u64 {
         self.timestamp
     }

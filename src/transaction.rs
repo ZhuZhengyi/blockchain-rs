@@ -17,8 +17,8 @@ const SUBSIDY: i32 = 10;         //挖矿奖励
 pub struct TxInput {
     txid: Vec<u8>,          // 交易的id
     outid: usize,           // 该交易输入对应交易输出的索引
-    signature: Vec<u8>,     // 交易签名
-    pub_key: Vec<u8>,       // 公钥
+    signature: Vec<u8>,     // 交易签名,
+    pub_key: Vec<u8>,       // 公钥,
 }
 
 impl TxInput {
@@ -44,7 +44,7 @@ impl TxInput {
 
     /// 获取交易公钥
     pub fn get_pub_key(&self) -> &[u8] {
-        self.pub_key.as_slice()
+        return self.pub_key.as_slice();
     }
 
     ///
@@ -54,12 +54,10 @@ impl TxInput {
     }
 }
 
-
-
 /// 交易输出
 #[derive(Clone, Serialize, Deserialize)]
 pub struct TxOutput {
-    value: i32,                 //交易花费币的数量
+    cost: i32,                  //交易花费币的数量
     pub_key_hash: Vec<u8>,      //公钥hash
 }
 
@@ -67,7 +65,7 @@ impl TxOutput {
     /// 新建一个交易输出
     pub fn new(value: i32, address: &str) -> Self {
         let mut output = TxOutput {
-            value,
+            cost: value,
             pub_key_hash: vec![],
         };
         output.lock(address);
@@ -81,16 +79,19 @@ impl TxOutput {
         self.pub_key_hash = payload[1..payload.len()-wallet::ADDRESS_CHECKSUM_LEN].to_vec();
     }
 
+    // 检查是否lock
     pub fn is_locked_with_key(&self, key_hash: &[u8]) -> bool {
         self.pub_key_hash.eq(key_hash)
     }
 
+    /// 获取公钥hash
     pub fn get_pub_key_hash(&self) -> &[u8] {
         self.pub_key_hash.as_slice()
     }
 
-    pub fn get_value(&self) -> i32 {
-        self.value
+    /// 获取花费
+    pub fn get_cost(&self) -> i32 {
+        self.cost
     }
 }
 

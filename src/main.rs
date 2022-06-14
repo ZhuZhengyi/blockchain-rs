@@ -76,12 +76,12 @@ fn main() {
             let payload = utils::base58_decode(address.as_str());
             let pub_key_hash = &payload[1..payload.len() - ADDRESS_CHECKSUM_LEN];
 
-            let blockchain = Blockchain::new_blockchain();
+            let blockchain = Blockchain::open_blockchain();
             let utxo_set = UTXOSet::new(blockchain);
             let utxos = utxo_set.find_utxo(pub_key_hash);
             let mut balance = 0;
             for utxo in utxos {
-                balance += utxo.get_value();
+                balance += utxo.get_cost();
             }
             println!("Balance of {}: {}", address, balance);
         },
@@ -98,7 +98,7 @@ fn main() {
             if !validate_address(to.as_str()) {
                 panic!("ERROR: Recipient address is not valid")
             }
-            let blockchain = Blockchain::new_blockchain();
+            let blockchain = Blockchain::open_blockchain();
             let utxo_set = UTXOSet::new(blockchain.clone());
             // 创建 UTXO 交易
             let transaction =
@@ -117,7 +117,7 @@ fn main() {
             println!("Success!")
         },
         Command::PrintChain => {
-            let mut block_iterator = Blockchain::new_blockchain().iterator();
+            let mut block_iterator = Blockchain::open_blockchain().iterator();
             loop {
                 let option = block_iterator.next();
                 if option.is_none() {
@@ -147,14 +147,14 @@ fn main() {
                     for output in tx.get_vout() {
                         let pub_key_hash = output.get_pub_key_hash();
                         let address = convert_address(pub_key_hash);
-                        println!("-- Output value = {}, to = {}", output.get_value(), address,)
+                        println!("-- Output value = {}, to = {}", output.get_cost(), address,)
                     }
                 }
                 println!()
             }
         },
         Command::ReindexUTXO => {
-            let blockchain = Blockchain::new_blockchain();
+            let blockchain = Blockchain::open_blockchain();
             let utxo_set = UTXOSet::new(blockchain);
             utxo_set.reindex();
             let count = utxo_set.count_transactions();
@@ -168,7 +168,7 @@ fn main() {
                 println!("Mining is on. Address to receive rewards: {}", addr);
                 GLOBAL_CONFIG.set_mining_addr(addr);
             }
-            let blockchain = Blockchain::new_blockchain();
+            let blockchain = Blockchain::open_blockchain();
             let sockert_addr = GLOBAL_CONFIG.get_node_addr();
             Server::new(blockchain).run(sockert_addr.as_str());
         },

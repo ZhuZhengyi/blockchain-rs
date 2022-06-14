@@ -116,7 +116,7 @@ impl UTXOSet {
             let outs: Vec<TxOutput> = bincode::deserialize(v.to_vec().as_slice()).expect("unable to deserialize TxOutput");
             for (idx, out) in outs.iter().enumerate() {
                 if out.is_locked_with_key(pub_key_hash) && accmulated < amount {
-                    accmulated += out.get_value();
+                    accmulated += out.get_cost();
                     if unspent_outputs.contains_key(txid_hex.as_str()) {
                         unspent_outputs.get_mut(txid_hex.as_str())
                             .unwrap()

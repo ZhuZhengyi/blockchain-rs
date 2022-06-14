@@ -1,10 +1,11 @@
 // memory_pool.rs
 //
 
-use std::{sync::RwLock, collections::HashMap};
-
+use std::{
+    sync::RwLock, 
+    collections::HashMap
+};
 use data_encoding::HEXLOWER;
-
 use crate::Transaction;
 
 /// 交易内存池 ( K -> txid_hex, V => Transaction )
